@@ -3,7 +3,7 @@
 ; the 'reset/pause/stop timer' parameter (the last parameter) in the examples are as follow:
 ; 'reset' = starts an existing timer over, or starts the last timer over
 ; 'pause' = pauses/resume timer, if timer doesn't exist, it restarts the last one
-; 'stop' = destroys the gui - default
+; 'stop' = stops the timer and hides the gui - default
 ;
 ;
 ; when using Timer.Hold_to_StartTimer or Timer.Toggle_to_StartTimer methods,

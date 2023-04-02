@@ -27,3 +27,7 @@ There is a third parameter you can pass, `pause/reset/stop (default)`
 &nbsp;
 
 There also exists a `Timer.Pause_Timer()` `Timer.Reset_Timer()` and `Timer_Stop_Timer()` that you can bind to hotkeys. These methods affect existing or last used timers.
+
+&nbsp;
+
+There's also a method for pulling up a gui to enter a time in manually for those one-off situations.

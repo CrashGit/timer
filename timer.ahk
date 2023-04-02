@@ -18,18 +18,21 @@
 ;     Timer.Hold_to_StartTimer(0, 12, 'Space', 1000, 'reset')
 ;     KeyWait('Space')
 ; }
-;
-;
+; 
+; 
 ; method 2
 ; example of a hotkey to toggle a timer of 3:00 that pauses on reactivation if timer is still running
 ; parameters(minutes, seconds, hotkey reactivation action)
 ; <!a::Timer.Toggle_to_StartTimer(3, 0, 'pause'), KeyWait('a')
 ;
-;
 ; you can also call these methods to affect an existing or last existing Timer
 ; <!s::Timer.Pause_Timer(), KeyWait('s')
 ; <!d::Timer.Reset_Timer(), KeyWait('d')
 ; <!f::Timer.Stop_Timer(), KeyWait('f')
+;
+; if you want to manually add a time for one-off scenarios
+; <!w::Timer.Start_TimerSelection()
+
 
 
 Timer.CreateGui()
@@ -37,14 +40,13 @@ Timer.CreateGui()
 
 class Timer {
     ; variables
-    static TimerGui     := unset
     static timer        := unset    ; TimerGui timer text
     static timerRunning := false    ; state of Timer running, used for pause
     static priorHotkey  := unset    ; A_PriorHotKey registers separate pause, reset, and stop method calls
                                     ; this makes sure only calls to Hold and Toggle methods are remembered
 
-    static minutes      := 3        ; minutes left on timer
-    static seconds      := 0        ; seconds left on timer
+    static minutes       := 3       ; minutes left on timer
+    static seconds       := 0       ; seconds left on timer
     static const_minutes := unset   ; keeps track of minutes sent by hotkey
     static const_seconds := unset   ; keeps track of seconds sent by hotkey
 
@@ -142,11 +144,10 @@ class Timer {
         this.seconds := this.const_seconds
         try this.timer.Value := Format('{:02}', this.minutes) ':' Format('{:02}', this.seconds)
 
-        this.Toggle_Timer()
-
         if WinExist('ahk_id ' this.TimerGui.Hwnd)
             this.Hide_Timer()
         else {
+            this.Toggle_Timer()
             this.timer.Opt('cffffff')
             this.TimerGui.Show('xCenter y-8 NoActivate')
             this.RoundedCorners(15)
@@ -185,18 +186,75 @@ class Timer {
         this.Hide_Timer()
         this.Start_Timer()
     }
+
+
+    static Start_TimerSelection() {
+        this.TimerSelection.Show('AutoSize')
+        ControlFocus(this.minutesBox)
+    }
     ;;;;;;;;;;;;;; TIMER ACTIONS ;;;;;;;;;;;;;;
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
     static CreateGui() {
-        TimerGui := Gui('+AlwaysOnTop -SysMenu +ToolWindow -Caption -Border')
-        TimerGui.SetFont('cffffff s12 bold')
-        TimerGui.BackColor := '292a35'
-        this.TimerGui := TimerGui
+        this.TimerGui := Gui('+AlwaysOnTop -SysMenu +ToolWindow -Caption -Border')
+        this.TimerGui.SetFont('cffffff s12 bold')
+        this.TimerGui.BackColor := '292a35'
         this.timer := this.TimerGui.AddText('y+15', Format('{:02}', this.minutes) ':' Format('{:02}', this.seconds))
+
+
+
+        this.TimerSelection := Gui('+AlwaysOnTop')
+        this.TimerSelection.OnEvent('Escape', (*) => this.Hide_Timer_Selection())
+
+        this.TimerSelection.SetFont('cffffff s12 bold')
+        this.TimerSelection.BackColor := this.TimerGui.BackColor
+
+        this.TimerSelection.AddText('', 'Enter a time:')
+        this.TimerSelection.SetFont('c000000 norm')
+
+        this.minutesBox := this.TimerSelection.AddEdit('Limit2 Number')
+        this.minutesBox.OnEvent('Change', (*) => this.CheckMinutes(this.minutesBox.value))
+
+        this.secondsBox := this.TimerSelection.AddEdit('Limit2 Number')
+        this.secondsBox.OnEvent('Change', (*) => this.CheckSeconds(this.secondsBox.value))
+
+        this.TimerSelection.AddButton('x-10 y-10 w1 h1 +default').OnEvent('Click', (*) => this.TimerInput(this.minutesBox.value, this.secondsBox.value))
     }
+
+
+    ; safe guards for minute box
+    static CheckMinutes(minutes) {
+        if minutes = ''
+            this.minutesBox.value := ''
+
+        else if minutes > 59
+            this.minutesBox.value := 59
+    }
+
+
+    ; safe guards for seconds box
+    static CheckSeconds(seconds) {
+        if seconds = ''
+            this.secondsBox.value := ''
+
+        else if seconds > 59
+            this.secondsBox.value := 59
+    }
+
+    ; on pressing enter
+    static TimerInput(minutes, seconds) {
+        minutes := minutes = '' ? 0 : minutes
+        seconds := seconds = '' ? 0 : seconds
+
+        if WinExist('ahk_id ' this.TimerGui.Hwnd)
+            this.Hide_Timer()
+
+        this.Toggle_to_StartTimer(minutes, seconds)
+        this.Hide_Timer_Selection()
+    }
+
 
 
     static RoundedCorners(curve) { ; dynamically rounds the corners of the gui, param is the curve radius as an integer
@@ -218,10 +276,10 @@ class Timer {
     ; check if a different timer is trying to be set with another hotkey
     static HotkeyCheck() {
         if A_ThisHotkey != this.priorHotkey {
-            this.minutes := this.const_minutes
-            this.seconds := this.const_seconds
-            this.priorHotkey := A_ThisHotkey
-            this.timerRunning := false
+            this.minutes         := this.const_minutes
+            this.seconds         := this.const_seconds
+            this.priorHotkey     := A_ThisHotkey
+            this.timerRunning    := false
             try this.timer.Value := Format('{:02}', this.minutes) ':' Format('{:02}', this.seconds)
         }
     }
@@ -232,6 +290,14 @@ class Timer {
             this.TimerGui.Hide()
             this.StopUpdatingTime()
             this.timerRunning := false
+        }
+    }
+
+    static Hide_Timer_Selection(*) {
+        if WinExist('ahk_id ' this.TimerSelection.Hwnd) {
+            this.minutesBox.value := ''
+            this.secondsBox.value := ''
+            this.TimerSelection.Hide()
         }
     }
 } ;;;;;;;;;;;;;;;;;;END OF CLASS;;;;;;;;;;;;;;;;;;;

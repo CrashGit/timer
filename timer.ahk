@@ -42,7 +42,7 @@ class Timer {
     ; variables
     static timer        := unset    ; TimerGui timer text
     static timerRunning := false    ; state of Timer running, used for pause
-    static priorHotkey  := unset    ; A_PriorHotKey registers separate pause, reset, and stop method calls
+    static priorHotkey  := 0        ; A_PriorHotKey registers separate pause, reset, and stop method calls
                                     ; this makes sure only calls to Hold and Toggle methods are remembered
 
     static minutes       := 3       ; minutes left on timer
